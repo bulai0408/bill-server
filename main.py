@@ -14,6 +14,7 @@
 
 from ast import Add
 import datetime
+import json
 from typing import ItemsView
 from models import Users, Records
 from tortoise.contrib.sanic import register_tortoise
@@ -74,6 +75,34 @@ async def create_new_record(request):
         "code": 200,
         "message": "Add Items Succeed!",
         "data": user_info_dict
+    })
+
+
+@app.post("/record/update")
+# for swagger, the same with your needed params
+@doc.consumes(doc.JsonBody({
+    "id": int,
+    "name": str,
+    "price": int,
+    "type": int
+}), location='body')
+async def update_record(request):
+    data = request.json
+    id = data["id"]
+
+    # 第一个参数 一个 dict eg:{"key1":1,"key2":2,"key3":3}
+    # 第二个参数 要去除的key eg:{"key1","key2"}
+    # 得到 {"key3":3}
+    def without_keys(d, keys):
+        return {k: v for k, v in d.items() if k not in keys}
+
+    omit_id_data = without_keys(data, {"id"})
+
+    user_info = await Records.filter(id=id).update(**omit_id_data)
+    return response.json({
+        "code": 200,
+        "message": "Updated Items Succeed!",
+        "data": user_info
     })
 
 
